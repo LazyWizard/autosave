@@ -14,23 +14,13 @@ public class AutosaveModPlugin extends BaseModPlugin
     public void onApplicationLoad() throws Exception
     {
         Autosaver.reloadSettings();
-        if (!Autosaver.ENABLE_AUTOSAVES)
-        {
-            return;
-        }
-
         saver = new Autosaver();
     }
 
     @Override
     public void onGameLoad()
     {
-        if (!Autosaver.ENABLE_AUTOSAVES)
-        {
-            return;
-        }
-
-        saver.resetAutosaveTimer();
+        saver.resetTimeSinceLastSave();
         Global.getSector().addTransientScript(saver);
         Global.getSector().addTransientListener(saver);
     }
@@ -38,12 +28,6 @@ public class AutosaveModPlugin extends BaseModPlugin
     @Override
     public void afterGameSave()
     {
-        if (!Autosaver.ENABLE_AUTOSAVES)
-        {
-            return;
-        }
-
-        // Reset timer after a manual save
-        saver.resetAutosaveTimer();
+        saver.resetTimeSinceLastSave();
     }
 }
