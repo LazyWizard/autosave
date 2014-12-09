@@ -1,0 +1,13 @@
+ 1.0b (December 08, 2014)
+==========================
+Added "minutesBetweenSubsequentWarnings" setting to autosave_settings.json
+Fixed bug where the mod started spamming sector messages after a failed autosave
+
+ 1.0 (December 08, 2014)
+=========================
+Initial release:
+ - By default, warns when you haven't saved in a while, and tells you how many
+   battles and market transactions have occurred since the last save
+ - Player can enable autosaves in autosave_settings.json, can autosave if enough
+   time has passed since the last save, or set it to force a save after every
+   battle or market transaction
