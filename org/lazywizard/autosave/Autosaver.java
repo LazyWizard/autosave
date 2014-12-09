@@ -21,14 +21,13 @@ import org.json.JSONObject;
  */
 class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 {
-    private static boolean AUTOSAVES_ENABLED;
-    private static int SAVE_KEY;
-    private static int MINUTES_BEFORE_SAVE_WARNING, MINUTES_BEFORE_FORCED_AUTOSAVE;
-    private static boolean FORCE_SAVE_AFTER_MARKET_TRANSACTIONS,
-            FORCE_SAVE_AFTER_PLAYER_BATTLES;
-    private boolean needsAutosave = false, hasWarned = false;
+    private static int MINUTES_BEFORE_SAVE_WARNING, MINUTES_BETWEEN_SAVE_WARNINGS,
+            MINUTES_BEFORE_FORCED_AUTOSAVE, SAVE_KEY;
+    private static boolean AUTOSAVES_ENABLED, FORCE_SAVE_AFTER_PLAYER_BATTLES,
+            FORCE_SAVE_AFTER_MARKET_TRANSACTIONS;
+    private boolean shouldAutosave = false;
     private int battlesSinceLastSave = 0, transactionsSinceLastSave = 0;
-    private long lastSave;
+    private long lastWarn, lastSave;
 
     static void reloadSettings() throws IOException, JSONException
     {
@@ -37,6 +36,8 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         // Autosave settings
         MINUTES_BEFORE_SAVE_WARNING = settings.getInt(
                 "minutesWithoutSaveBeforeWarning");
+        MINUTES_BETWEEN_SAVE_WARNINGS = settings.getInt(
+                "minutesBetweenSubsequentWarnings");
         AUTOSAVES_ENABLED = settings.getBoolean("enableAutosaves");
         SAVE_KEY = settings.optInt("saveKey", KeyEvent.VK_F5);
         MINUTES_BEFORE_FORCED_AUTOSAVE = settings.getInt(
@@ -69,6 +70,11 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         return (int) TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - lastSave);
     }
 
+    private int getMinutesSinceLastWarning()
+    {
+        return (int) TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - lastWarn);
+    }
+
     static boolean areAutosavesEnabled()
     {
         return AUTOSAVES_ENABLED;
@@ -83,7 +89,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             Global.getLogger(Autosaver.class).log(Level.DEBUG,
                     "Market autosave triggered, " + getMinutesSinceLastSave()
                     + " minutes since last save");
-            needsAutosave = true;
+            shouldAutosave = true;
         }
     }
 
@@ -96,28 +102,24 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             Global.getLogger(Autosaver.class).log(Level.DEBUG,
                     "Battle autosave triggered, " + getMinutesSinceLastSave()
                     + " minutes since last save");
-            needsAutosave = true;
+            shouldAutosave = true;
         }
     }
 
-    private void checkTimeSinceLastSave()
+    private void runChecks()
     {
-        if (hasWarned && !AUTOSAVES_ENABLED)
-        {
-            return;
-        }
-
         final int minutesSinceLastSave = getMinutesSinceLastSave();
-        if (!hasWarned && minutesSinceLastSave >= MINUTES_BEFORE_SAVE_WARNING)
+        if (minutesSinceLastSave >= MINUTES_BEFORE_SAVE_WARNING
+                && getMinutesSinceLastWarning() >= MINUTES_BETWEEN_SAVE_WARNINGS)
         {
             Global.getSector().getCampaignUI().addMessage(
                     "It has been " + minutesSinceLastSave + " minutes since"
                     + " your last save.", Color.YELLOW);
             Global.getSector().getCampaignUI().addMessage(battlesSinceLastSave
                     + " player battles and " + transactionsSinceLastSave
-                    + " market transactions have occured in this time.",
+                    + " market transactions have occurred in this time.",
                     Color.YELLOW);
-            hasWarned = true;
+            lastWarn = System.currentTimeMillis();
         }
 
         if (AUTOSAVES_ENABLED && minutesSinceLastSave >= MINUTES_BEFORE_FORCED_AUTOSAVE)
@@ -125,7 +127,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             Global.getSector().getCampaignUI().addMessage("It has been "
                     + minutesSinceLastSave + " minutes since your last"
                     + " save, forced autosave triggered.", Color.YELLOW);
-            needsAutosave = true;
+            shouldAutosave = true;
         }
     }
 
@@ -153,22 +155,22 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 
         // Check if it's been long enough since the last save to warn the player
         // Explicitly autosave if the player has been wandering aimlessly long enough
-        checkTimeSinceLastSave();
+        runChecks();
 
         // If we've hit an autosave trigger, force a save key event
-        if (needsAutosave)
+        if (shouldAutosave)
         {
-            needsAutosave = false;
+            shouldAutosave = false;
+            resetTimeSinceLastSave();
             forceSave();
         }
     }
 
     void resetTimeSinceLastSave()
     {
-        lastSave = System.currentTimeMillis();
+        lastSave = lastWarn = System.currentTimeMillis();
         battlesSinceLastSave = 0;
         transactionsSinceLastSave = 0;
-        hasWarned = false;
     }
 
     Autosaver()
