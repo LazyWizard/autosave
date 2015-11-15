@@ -8,7 +8,7 @@ import com.fs.starfarer.api.Global;
  */
 public class AutosaveModPlugin extends BaseModPlugin
 {
-    private Autosaver saver;
+    private static Autosaver saver;
 
     @Override
     public void onApplicationLoad() throws Exception

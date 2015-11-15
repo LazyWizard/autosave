@@ -1,6 +1,6 @@
 {
     # How long since the last save before the mod prompts you to save again
-    "minutesWithoutSaveBeforeWarning":15,
+    "minutesWithoutSaveBeforeWarning":10,
     "minutesBetweenSubsequentWarnings":5,
 
     #####################

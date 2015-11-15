@@ -12,7 +12,7 @@ import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.PlayerMarketTransaction;
 import com.fs.starfarer.api.combat.EngagementResultAPI;
-import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +21,7 @@ import org.json.JSONObject;
  */
 class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 {
+    private static final Logger Log = Logger.getLogger(Autosaver.class);
     private static int MINUTES_BEFORE_SAVE_WARNING, MINUTES_BETWEEN_SAVE_WARNINGS,
             MINUTES_BEFORE_FORCED_AUTOSAVE, SAVE_KEY;
     private static boolean AUTOSAVES_ENABLED, FORCE_SAVE_AFTER_PLAYER_BATTLES,
@@ -52,16 +53,14 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     {
         try
         {
-            Global.getLogger(Autosaver.class).log(Level.DEBUG,
-                    "Attempting autosave...");
+            Log.debug("Attempting autosave...");
             new Robot().keyPress(SAVE_KEY);
         }
         catch (AWTException ex)
         {
             // Disable autosaves
             AUTOSAVES_ENABLED = false;
-            Global.getLogger(Autosaver.class).log(Level.ERROR,
-                    "Failed to autosave: ", ex);
+            Log.error("Failed to autosave: ", ex);
         }
     }
 
@@ -86,8 +85,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         transactionsSinceLastSave++;
         if (AUTOSAVES_ENABLED && FORCE_SAVE_AFTER_MARKET_TRANSACTIONS)
         {
-            Global.getLogger(Autosaver.class).log(Level.DEBUG,
-                    "Market autosave triggered, " + getMinutesSinceLastSave()
+            Log.debug("Market autosave triggered, " + getMinutesSinceLastSave()
                     + " minutes since last save");
             shouldAutosave = true;
         }
@@ -99,8 +97,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         battlesSinceLastSave++;
         if (AUTOSAVES_ENABLED && FORCE_SAVE_AFTER_PLAYER_BATTLES)
         {
-            Global.getLogger(Autosaver.class).log(Level.DEBUG,
-                    "Battle autosave triggered, " + getMinutesSinceLastSave()
+            Log.debug("Battle autosave triggered, " + getMinutesSinceLastSave()
                     + " minutes since last save");
             shouldAutosave = true;
         }
