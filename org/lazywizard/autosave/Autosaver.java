@@ -16,9 +16,6 @@ import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/**
- * @author LazyWizard
- */
 class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 {
     private static final Logger Log = Logger.getLogger(Autosaver.class);

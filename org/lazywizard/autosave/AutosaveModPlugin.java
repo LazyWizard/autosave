@@ -3,9 +3,6 @@ package org.lazywizard.autosave;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 
-/**
- * @author LazyWizard
- */
 public class AutosaveModPlugin extends BaseModPlugin
 {
     private static Autosaver saver;
@@ -18,7 +15,7 @@ public class AutosaveModPlugin extends BaseModPlugin
     }
 
     @Override
-    public void onGameLoad()
+    public void onGameLoad(boolean newGame)
     {
         saver.resetTimeSinceLastSave();
         Global.getSector().addTransientScript(saver);
