@@ -1,3 +1,7 @@
+ 1.0d (November 19, 2015)
+==========================
+Fixed issue where simulated quicksave key presses weren't always registering
+
  1.0c (November 19, 2015)
 ==========================
 Updated to be compatible with Starsector 0.7a

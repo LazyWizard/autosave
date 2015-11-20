@@ -48,17 +48,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 
     private void forceSave()
     {
-        try
-        {
-            Log.debug("Attempting autosave...");
-            new Robot().keyPress(SAVE_KEY);
-        }
-        catch (AWTException ex)
-        {
-            // Disable autosaves
-            AUTOSAVES_ENABLED = false;
-            Log.error("Failed to autosave: ", ex);
-        }
+        Global.getSector().addTransientScript(new AutosaveScript());
     }
 
     private int getMinutesSinceLastSave()
@@ -69,11 +59,6 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     private int getMinutesSinceLastWarning()
     {
         return (int) TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - lastWarn);
-    }
-
-    static boolean areAutosavesEnabled()
-    {
-        return AUTOSAVES_ENABLED;
     }
 
     @Override
@@ -118,9 +103,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 
         if (AUTOSAVES_ENABLED && minutesSinceLastSave >= MINUTES_BEFORE_FORCED_AUTOSAVE)
         {
-            Global.getSector().getCampaignUI().addMessage("It has been "
-                    + minutesSinceLastSave + " minutes since your last"
-                    + " save, forced autosave triggered.", Color.YELLOW);
+            Global.getSector().getCampaignUI().addMessage("Autosaving...", Color.YELLOW);
             shouldAutosave = true;
         }
     }
@@ -171,5 +154,64 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     {
         super(false);
         resetTimeSinceLastSave();
+    }
+
+    private class AutosaveScript implements EveryFrameScript
+    {
+        private Robot robot = null;
+        private boolean isPressed = false, isDone = false;
+        private float timePressed = 0f;
+
+        private AutosaveScript()
+        {
+            try
+            {
+                robot = new Robot();
+            }
+            catch (AWTException ex)
+            {
+                // Unlikely this is a one-time failure, so disable subsequent autosaves
+                AUTOSAVES_ENABLED = false;
+                isDone = true;
+                Log.error("Failed to autosave: ", ex);
+            }
+        }
+
+        @Override
+        public boolean isDone()
+        {
+            return isDone;
+        }
+
+        @Override
+        public boolean runWhilePaused()
+        {
+            return true;
+        }
+
+        @Override
+        public void advance(float amount)
+        {
+            // Can't save while in a menu
+            CampaignUIAPI ui = Global.getSector().getCampaignUI();
+            if (isDone || Global.getSector().isInNewGameAdvance() || ui.isShowingDialog())
+            {
+                return;
+            }
+
+            // Press key if not already pressed
+            if (!isPressed)
+            {
+                Log.debug("Attempting autosave...");
+                robot.keyPress(SAVE_KEY);
+                isPressed = true;
+            }
+            // Release key one frame later
+            else
+            {
+                robot.keyRelease(SAVE_KEY);
+                isDone = true;
+            }
+        }
     }
 }
