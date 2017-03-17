@@ -1,3 +1,7 @@
+ 1.0e (March 16, 2017)
+=======================
+Switched version file hosting to Bitbucket
+
  1.0d (November 19, 2015)
 ==========================
 Fixed issue where simulated quicksave key presses weren't always registering
