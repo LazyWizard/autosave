@@ -1,3 +1,7 @@
+ 1.0f (April 21, 2017)
+=======================
+Updated to be compatible with Starsector 0.8a
+
  1.0e (March 16, 2017)
 =======================
 Switched version file hosting to Bitbucket
