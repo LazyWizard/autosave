@@ -1,11 +1,5 @@
 package org.lazywizard.autosave;
 
-import java.awt.AWTException;
-import java.awt.Color;
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
@@ -14,7 +8,13 @@ import com.fs.starfarer.api.campaign.PlayerMarketTransaction;
 import com.fs.starfarer.api.combat.EngagementResultAPI;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
-import org.json.JSONObject;
+import org.lazywizard.lazylib.JSONUtils;
+import org.lazywizard.lazylib.JSONUtils.CommonDataJSONObject;
+
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 {
@@ -29,7 +29,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 
     static void reloadSettings() throws IOException, JSONException
     {
-        JSONObject settings = Global.getSettings().loadJSON("autosave_settings.json");
+        final CommonDataJSONObject settings = JSONUtils.loadCommonJSON("autosave_settings.json", "autosave_settings.json.default");
 
         // Autosave settings
         MINUTES_BEFORE_SAVE_WARNING = settings.getInt(
@@ -93,10 +93,10 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         {
             Global.getSector().getCampaignUI().addMessage(
                     "It has been " + minutesSinceLastSave + " minutes since"
-                    + " your last save.", Color.YELLOW);
+                            + " your last save.", Color.YELLOW);
             Global.getSector().getCampaignUI().addMessage(battlesSinceLastSave
-                    + " player battles and " + transactionsSinceLastSave
-                    + " market transactions have occurred in this time.",
+                            + " player battles and " + transactionsSinceLastSave
+                            + " market transactions have occurred in this time.",
                     Color.YELLOW);
             lastWarn = System.currentTimeMillis();
         }
