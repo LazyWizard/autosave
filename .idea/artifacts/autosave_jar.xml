@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="autosave:jar">
+    <output-path>$STARSECTOR_INSTALL_DIR$/mods/Autosave/jars</output-path>
+    <root id="archive" name="lw_Autosave.jar">
+      <element id="module-output" name="autosave" />
+    </root>
+  </artifact>
+</component>

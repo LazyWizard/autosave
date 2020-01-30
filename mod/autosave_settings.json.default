@@ -1,0 +1,26 @@
+{
+    # How long since the last save before the mod prompts you to save again
+    "minutesWithoutSaveBeforeWarning":15,
+    "minutesBetweenSubsequentWarnings":5,
+
+    #####################
+    # AUTOSAVE SETTINGS #
+    #####################
+
+    # Set to true to enable the rest of this file's options
+    "enableAutosaves":false,
+
+    # REQUIRED - must be the same key you press to save the game manually!
+    # Key IDs are integers and can be found in the Java documentation here:
+    # https://docs.oracle.com/javase/7/docs/api/constant-values.html#java.awt.event.KeyEvent.VK_0
+    "saveKey":116, # Default: 116 (F5)
+
+    # How long after the last save before an autosave will be forced
+    "minutesBeforeForcedAutosave":30,
+
+    # Enable to autosave after the player performs any market actions
+    "forceSaveAfterMarketTransactions":false,
+
+    # Enable to autosave after the player is in a battle
+    "forceSaveAfterPlayerBattles":false
+}
