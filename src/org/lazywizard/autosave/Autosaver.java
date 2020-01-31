@@ -29,7 +29,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 
     static void reloadSettings() throws IOException, JSONException
     {
-        final CommonDataJSONObject settings = JSONUtils.loadCommonJSON("autosave_settings.json", "autosave_settings.json.default");
+        final CommonDataJSONObject settings = JSONUtils.loadCommonJSON("config/lw_autosave_settings.json", "autosave_settings.json.default");
 
         // Autosave settings
         MINUTES_BEFORE_SAVE_WARNING = settings.getInt(

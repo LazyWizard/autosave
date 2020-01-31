@@ -1,3 +1,10 @@
+ 1.1 (November 16, 2018)
+=========================
+Updated to be compatible with Starsector 0.9a
+This mod now requires LazyLib 2.4b or later
+Settings are now stored in saves/common/autosave_settings.json.data
+ - This file will only exist after launching the mod at least once
+
  1.0f (April 21, 2017)
 =======================
 Updated to be compatible with Starsector 0.8a
