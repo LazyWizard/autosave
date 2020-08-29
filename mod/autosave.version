@@ -1,11 +1,11 @@
 {
-    "masterVersionFile":"https://bitbucket.org/LazyWizard/autosave/downloads/autosave.version",
+    "masterVersionFile":"https://raw.githubusercontent.com/LazyWizard/autosave/master/mod/autosave.version",
     "modName":"Autosave",
     "modThreadId":9748,
     "modVersion":
     {
         "major":1,
         "minor":1,
-        "patch":0
+        "patch":b
     }
 }
