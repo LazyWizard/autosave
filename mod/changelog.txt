@@ -1,3 +1,7 @@
+ 1.1b (August 28, 2020)
+========================
+Moved version file hosting to GitHub
+
  1.1 (November 16, 2018)
 =========================
 Updated to be compatible with Starsector 0.9a
