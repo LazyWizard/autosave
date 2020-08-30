@@ -3,6 +3,7 @@
     <output-path>$STARSECTOR_INSTALL_DIR$/mods/Autosave/jars</output-path>
     <root id="archive" name="lw_Autosave.jar">
       <element id="module-output" name="autosave" />
+      <element id="dir-copy" path="$PROJECT_DIR$/src" />
     </root>
   </artifact>
 </component>
