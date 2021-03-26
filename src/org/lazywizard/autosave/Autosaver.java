@@ -6,12 +6,15 @@ import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.PlayerMarketTransaction;
 import com.fs.starfarer.api.combat.EngagementResultAPI;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.lazywizard.lazylib.JSONUtils;
 import org.lazywizard.lazylib.JSONUtils.CommonDataJSONObject;
 
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -19,31 +22,44 @@ import java.util.concurrent.TimeUnit;
 class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 {
     private static final Logger Log = Logger.getLogger(Autosaver.class);
-    private static int MINUTES_BEFORE_SAVE_WARNING, MINUTES_BETWEEN_SAVE_WARNINGS,
-            MINUTES_BEFORE_FORCED_AUTOSAVE, SAVE_KEY;
-    private static boolean AUTOSAVES_ENABLED, FORCE_SAVE_AFTER_PLAYER_BATTLES,
-            FORCE_SAVE_AFTER_MARKET_TRANSACTIONS;
+    private static int minutesBeforeSaveWarning, minutesBetweenSaveWarnings,
+            minutesBeforeForcedAutosave, saveKey;
+    private static boolean autosavesEnabled, forceSaveAfterPlayerBattles,
+            forceSaveAfterMarketTransactions;
     private boolean shouldAutosave = false;
     private int battlesSinceLastSave = 0, transactionsSinceLastSave = 0;
     private long lastWarn, lastSave;
 
     static void reloadSettings() throws IOException, JSONException
     {
+        //Log.setLevel(Level.ALL);
+
+        // Delete old settings file if present
+        Global.getSettings().deleteTextFileFromCommon("config/autosave_settings.json");
         final CommonDataJSONObject settings = JSONUtils.loadCommonJSON("config/lw_autosave_settings.json", "autosave_settings.json.default");
 
         // Autosave settings
-        MINUTES_BEFORE_SAVE_WARNING = settings.getInt(
+        minutesBeforeSaveWarning = settings.getInt(
                 "minutesWithoutSaveBeforeWarning");
-        MINUTES_BETWEEN_SAVE_WARNINGS = settings.getInt(
+        minutesBetweenSaveWarnings = settings.getInt(
                 "minutesBetweenSubsequentWarnings");
-        AUTOSAVES_ENABLED = settings.getBoolean("enableAutosaves");
-        SAVE_KEY = settings.optInt("saveKey", KeyEvent.VK_F5);
-        MINUTES_BEFORE_FORCED_AUTOSAVE = settings.getInt(
+        autosavesEnabled = settings.getBoolean("enableAutosaves");
+        saveKey = settings.optInt("saveKey", KeyEvent.VK_F5);
+        minutesBeforeForcedAutosave = settings.getInt(
                 "minutesBeforeForcedAutosave");
-        FORCE_SAVE_AFTER_MARKET_TRANSACTIONS = settings.getBoolean(
+        forceSaveAfterMarketTransactions = settings.getBoolean(
                 "forceSaveAfterMarketTransactions");
-        FORCE_SAVE_AFTER_PLAYER_BATTLES = settings.getBoolean(
+        forceSaveAfterPlayerBattles = settings.getBoolean(
                 "forceSaveAfterPlayerBattles");
+
+        Log.debug("Settings: " +
+                "\n - enableAutosaves: " + autosavesEnabled +
+                "\n - minutesWithoutSaveBeforeWarning: " + minutesBeforeSaveWarning +
+                "\n - minutesBetweenSubsequentWarnings: " + minutesBetweenSaveWarnings +
+                "\n - minutesBeforeForcedAutosave" + minutesBeforeForcedAutosave +
+                "\n - forceSaveAfterMarketTransactions: " + forceSaveAfterMarketTransactions +
+                "\n - forceSaveAfterPlayerBattles: " + forceSaveAfterPlayerBattles +
+                "\n - saveKey: " + saveKey);
     }
 
     private void forceSave()
@@ -65,11 +81,15 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     public void reportPlayerMarketTransaction(PlayerMarketTransaction transaction)
     {
         transactionsSinceLastSave++;
-        if (AUTOSAVES_ENABLED && FORCE_SAVE_AFTER_MARKET_TRANSACTIONS)
+        if (autosavesEnabled && forceSaveAfterMarketTransactions)
         {
             Log.debug("Market autosave triggered, " + getMinutesSinceLastSave()
                     + " minutes since last save");
             shouldAutosave = true;
+        }
+        else
+        {
+            Log.debug("Market autosaves disabled, gnoring transaction");
         }
     }
 
@@ -77,19 +97,23 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     public void reportPlayerEngagement(EngagementResultAPI result)
     {
         battlesSinceLastSave++;
-        if (AUTOSAVES_ENABLED && FORCE_SAVE_AFTER_PLAYER_BATTLES)
+        if (autosavesEnabled && forceSaveAfterPlayerBattles)
         {
             Log.debug("Battle autosave triggered, " + getMinutesSinceLastSave()
                     + " minutes since last save");
             shouldAutosave = true;
+        }
+        else
+        {
+            Log.debug("Market autosaves disabled, gnoring transaction");
         }
     }
 
     private void runChecks()
     {
         final int minutesSinceLastSave = getMinutesSinceLastSave();
-        if (minutesSinceLastSave >= MINUTES_BEFORE_SAVE_WARNING
-                && getMinutesSinceLastWarning() >= MINUTES_BETWEEN_SAVE_WARNINGS)
+        if (minutesSinceLastSave >= minutesBeforeSaveWarning
+                && getMinutesSinceLastWarning() >= minutesBetweenSaveWarnings)
         {
             Global.getSector().getCampaignUI().addMessage(
                     "It has been " + minutesSinceLastSave + " minutes since"
@@ -101,7 +125,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             lastWarn = System.currentTimeMillis();
         }
 
-        if (AUTOSAVES_ENABLED && minutesSinceLastSave >= MINUTES_BEFORE_FORCED_AUTOSAVE)
+        if (autosavesEnabled && minutesSinceLastSave >= minutesBeforeForcedAutosave)
         {
             Global.getSector().getCampaignUI().addMessage("Autosaving...", Color.YELLOW);
             shouldAutosave = true;
@@ -125,7 +149,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     {
         // Can't save while in a menu
         CampaignUIAPI ui = Global.getSector().getCampaignUI();
-        if (Global.getSector().isInNewGameAdvance() || ui.isShowingDialog())
+        if (Global.getSector().isInNewGameAdvance() || ui.isShowingDialog() || ui.isShowingMenu())
         {
             return;
         }
@@ -140,6 +164,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             shouldAutosave = false;
             resetTimeSinceLastSave();
             forceSave();
+            Log.debug("Autosave trigger hit");
         }
     }
 
@@ -148,6 +173,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         lastSave = lastWarn = System.currentTimeMillis();
         battlesSinceLastSave = 0;
         transactionsSinceLastSave = 0;
+        Log.debug("Reset last save time");
     }
 
     Autosaver()
@@ -156,11 +182,10 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         resetTimeSinceLastSave();
     }
 
-    private class AutosaveScript implements EveryFrameScript
+    private static class AutosaveScript implements EveryFrameScript
     {
         private Robot robot = null;
         private boolean isPressed = false, isDone = false;
-        private float timePressed = 0f;
 
         private AutosaveScript()
         {
@@ -171,7 +196,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             catch (AWTException ex)
             {
                 // Unlikely this is a one-time failure, so disable subsequent autosaves
-                AUTOSAVES_ENABLED = false;
+                autosavesEnabled = false;
                 isDone = true;
                 Log.error("Failed to autosave: ", ex);
             }
@@ -194,7 +219,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         {
             // Can't save while in a menu
             CampaignUIAPI ui = Global.getSector().getCampaignUI();
-            if (isDone || Global.getSector().isInNewGameAdvance() || ui.isShowingDialog())
+            if (isDone || Global.getSector().isInNewGameAdvance() || ui.isShowingDialog() || ui.isShowingMenu())
             {
                 return;
             }
@@ -203,13 +228,14 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             if (!isPressed)
             {
                 Log.debug("Attempting autosave...");
-                robot.keyPress(SAVE_KEY);
+                robot.keyPress(saveKey);
                 isPressed = true;
             }
             // Release key one frame later
             else
             {
-                robot.keyRelease(SAVE_KEY);
+                Log.debug("Autosave complete!");
+                robot.keyRelease(saveKey);
                 isDone = true;
             }
         }
