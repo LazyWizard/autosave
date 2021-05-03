@@ -25,7 +25,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     private static int minutesBeforeSaveWarning, minutesBetweenSaveWarnings,
             minutesBeforeForcedAutosave, saveKey;
     private static boolean autosavesEnabled, forceSaveAfterPlayerBattles,
-            forceSaveAfterMarketTransactions;
+            forceSaveAfterMarketTransactions, saveAsCopy;
     private boolean shouldAutosave = false;
     private int battlesSinceLastSave = 0, transactionsSinceLastSave = 0;
     private long lastWarn, lastSave;
@@ -35,6 +35,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         //Log.setLevel(Level.ALL);
 
         // Delete old settings file if present
+        // FIXME: Must update LazyLib's CommonJSON to allow adding new keys before the next release
         Global.getSettings().deleteTextFileFromCommon("config/autosave_settings.json");
         final CommonDataJSONObject settings = JSONUtils.loadCommonJSON("config/lw_autosave_settings.json", "autosave_settings.json.default");
 
@@ -44,6 +45,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         minutesBetweenSaveWarnings = settings.getInt(
                 "minutesBetweenSubsequentWarnings");
         autosavesEnabled = settings.getBoolean("enableAutosaves");
+        saveAsCopy = settings.getBoolean("saveAsCopy");
         saveKey = settings.optInt("saveKey", KeyEvent.VK_F5);
         minutesBeforeForcedAutosave = settings.getInt(
                 "minutesBeforeForcedAutosave");
@@ -54,6 +56,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 
         Log.debug("Settings: " +
                 "\n - enableAutosaves: " + autosavesEnabled +
+                "\n - saveAsCopy: " + saveAsCopy +
                 "\n - minutesWithoutSaveBeforeWarning: " + minutesBeforeSaveWarning +
                 "\n - minutesBetweenSubsequentWarnings: " + minutesBetweenSaveWarnings +
                 "\n - minutesBeforeForcedAutosave" + minutesBeforeForcedAutosave +
@@ -159,6 +162,9 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
             shouldAutosave = false;
             resetTimeSinceLastSave();
             Log.debug("Beginning autosave");
+            if (saveAsCopy)
+                Global.getSector().getCampaignUI().cmdSaveCopy();
+            else
                 Global.getSector().getCampaignUI().cmdSave();
             Log.debug("Autosave complete");
         }
