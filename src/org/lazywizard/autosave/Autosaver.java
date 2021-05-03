@@ -62,11 +62,6 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
                 "\n - saveKey: " + saveKey);
     }
 
-    private void forceSave()
-    {
-        Global.getSector().addTransientScript(new AutosaveScript());
-    }
-
     private int getMinutesSinceLastSave()
     {
         return (int) TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - lastSave);
@@ -163,8 +158,9 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         {
             shouldAutosave = false;
             resetTimeSinceLastSave();
-            forceSave();
-            Log.debug("Autosave trigger hit");
+            Log.debug("Beginning autosave");
+                Global.getSector().getCampaignUI().cmdSave();
+            Log.debug("Autosave complete");
         }
     }
 
@@ -180,64 +176,5 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
     {
         super(false);
         resetTimeSinceLastSave();
-    }
-
-    private static class AutosaveScript implements EveryFrameScript
-    {
-        private Robot robot = null;
-        private boolean isPressed = false, isDone = false;
-
-        private AutosaveScript()
-        {
-            try
-            {
-                robot = new Robot();
-            }
-            catch (AWTException ex)
-            {
-                // Unlikely this is a one-time failure, so disable subsequent autosaves
-                autosavesEnabled = false;
-                isDone = true;
-                Log.error("Failed to autosave: ", ex);
-            }
-        }
-
-        @Override
-        public boolean isDone()
-        {
-            return isDone;
-        }
-
-        @Override
-        public boolean runWhilePaused()
-        {
-            return true;
-        }
-
-        @Override
-        public void advance(float amount)
-        {
-            // Can't save while in a menu
-            CampaignUIAPI ui = Global.getSector().getCampaignUI();
-            if (isDone || Global.getSector().isInNewGameAdvance() || ui.isShowingDialog() || ui.isShowingMenu())
-            {
-                return;
-            }
-
-            // Press key if not already pressed
-            if (!isPressed)
-            {
-                Log.debug("Attempting autosave...");
-                robot.keyPress(saveKey);
-                isPressed = true;
-            }
-            // Release key one frame later
-            else
-            {
-                Log.debug("Autosave complete!");
-                robot.keyRelease(saveKey);
-                isDone = true;
-            }
-        }
     }
 }
