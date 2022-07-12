@@ -2,57 +2,74 @@ package org.lazywizard.autosave;
 
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
-import com.fs.starfarer.api.campaign.CampaignUIAPI;
-import com.fs.starfarer.api.campaign.PlayerMarketTransaction;
+import com.fs.starfarer.api.campaign.*;
+import com.fs.starfarer.api.campaign.JumpPointAPI.JumpDestination;
 import com.fs.starfarer.api.combat.EngagementResultAPI;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.lazywizard.lazylib.JSONUtils;
 import org.lazywizard.lazylib.JSONUtils.CommonDataJSONObject;
 
-import java.awt.AWTException;
 import java.awt.Color;
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
 {
+    private static final String CONFIG_PATH = "config/lw_autosave_settings.json";
     private static final Logger Log = Logger.getLogger(Autosaver.class);
-    private static int minutesBeforeSaveWarning, minutesBetweenSaveWarnings,
-            minutesBeforeForcedAutosave, saveKey;
-    private static boolean autosavesEnabled, forceSaveAfterPlayerBattles,
-            forceSaveAfterMarketTransactions, saveAsCopy;
+    private static int minutesBeforeSaveWarning,
+            minutesBetweenSaveWarnings,
+            minutesBeforeForcedAutosave;
+    private static boolean autosavesEnabled,
+            forceSaveAfterPlayerBattles,
+            forceSaveAfterMarketTransactions,
+            forceSaveAfterMapChange,
+            saveAsCopy;
     private boolean shouldAutosave = false;
-    private int battlesSinceLastSave = 0, transactionsSinceLastSave = 0;
+    private int battlesSinceLastSave = 0,
+            transactionsSinceLastSave = 0;
     private long lastWarn, lastSave;
+
+    private static boolean optBoolean(JSONObject settings, String key, boolean defaultBoolean) throws JSONException
+    {
+        final boolean setting = settings.optBoolean(key, defaultBoolean);
+        settings.put(key, setting);
+        return setting;
+    }
+
+    private static int optInt(JSONObject settings, String key, int defaultInt) throws JSONException
+    {
+        final int setting = settings.optInt(key, defaultInt);
+        settings.put(key, setting);
+        return setting;
+    }
 
     static void reloadSettings() throws IOException, JSONException
     {
         //Log.setLevel(Level.ALL);
 
         // Delete old settings file if present
-        // FIXME: Must update LazyLib's CommonJSON to allow adding new keys before the next release
         Global.getSettings().deleteTextFileFromCommon("config/autosave_settings.json");
-        final CommonDataJSONObject settings = JSONUtils.loadCommonJSON("config/lw_autosave_settings.json", "autosave_settings.json.default");
+        final CommonDataJSONObject settings = JSONUtils.loadCommonJSON(CONFIG_PATH);
 
         // Autosave settings
-        minutesBeforeSaveWarning = settings.getInt(
-                "minutesWithoutSaveBeforeWarning");
-        minutesBetweenSaveWarnings = settings.getInt(
-                "minutesBetweenSubsequentWarnings");
-        autosavesEnabled = settings.getBoolean("enableAutosaves");
-        saveAsCopy = settings.getBoolean("saveAsCopy");
-        saveKey = settings.optInt("saveKey", KeyEvent.VK_F5);
-        minutesBeforeForcedAutosave = settings.getInt(
-                "minutesBeforeForcedAutosave");
-        forceSaveAfterMarketTransactions = settings.getBoolean(
-                "forceSaveAfterMarketTransactions");
-        forceSaveAfterPlayerBattles = settings.getBoolean(
-                "forceSaveAfterPlayerBattles");
+        minutesBeforeSaveWarning = optInt(settings,
+                "minutesWithoutSaveBeforeWarning", 15);
+        minutesBetweenSaveWarnings = optInt(settings,
+                "minutesBetweenSubsequentWarnings", 5);
+        autosavesEnabled = optBoolean(settings,"enableAutosaves", false);
+        saveAsCopy = optBoolean(settings,"saveAsCopy", false);
+        minutesBeforeForcedAutosave = optInt(settings,
+                "minutesBeforeForcedAutosave", 30);
+        forceSaveAfterMarketTransactions = optBoolean(settings,
+                "forceSaveAfterMarketTransactions", false);
+        forceSaveAfterPlayerBattles = optBoolean(settings,
+                "forceSaveAfterPlayerBattles", false);
+        forceSaveAfterMapChange = optBoolean(settings,
+                "forceSaveAfterMapChange", false);
+        settings.save();
 
         Log.debug("Settings: " +
                 "\n - enableAutosaves: " + autosavesEnabled +
@@ -62,7 +79,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
                 "\n - minutesBeforeForcedAutosave" + minutesBeforeForcedAutosave +
                 "\n - forceSaveAfterMarketTransactions: " + forceSaveAfterMarketTransactions +
                 "\n - forceSaveAfterPlayerBattles: " + forceSaveAfterPlayerBattles +
-                "\n - saveKey: " + saveKey);
+                "\n - forceSaveAfterMapChange: " + forceSaveAfterMapChange);
     }
 
     private int getMinutesSinceLastSave()
@@ -87,7 +104,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         }
         else
         {
-            Log.debug("Market autosaves disabled, gnoring transaction");
+            Log.debug("Market autosaves disabled, ignoring transaction");
         }
     }
 
@@ -103,7 +120,22 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         }
         else
         {
-            Log.debug("Market autosaves disabled, gnoring transaction");
+            Log.debug("Market autosaves disabled, ignoring transaction");
+        }
+    }
+
+    @Override
+    public void reportFleetJumped(CampaignFleetAPI fleet, SectorEntityToken from, JumpDestination to)
+    {
+        if (autosavesEnabled && forceSaveAfterMapChange && fleet.isPlayerFleet() && from != to.getDestination())
+        {
+            Log.debug("Map change autosave triggered, " + getMinutesSinceLastSave()
+                    + " minutes since last save");
+            shouldAutosave = true;
+        }
+        else
+        {
+            Log.debug("Map change autosaves disabled, ignoring jump");
         }
     }
 
@@ -161,11 +193,17 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         {
             shouldAutosave = false;
             resetTimeSinceLastSave();
+
             Log.debug("Beginning autosave");
             if (saveAsCopy)
+            {
                 Global.getSector().getCampaignUI().cmdSaveCopy();
+            }
             else
+            {
                 Global.getSector().getCampaignUI().cmdSave();
+            }
+
             Log.debug("Autosave complete");
         }
     }

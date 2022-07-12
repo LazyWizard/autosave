@@ -1,7 +1,18 @@
+ 1.2 (July 12, 2022)
+=====================
+Updated to be compatible with Starsector 0.95.1a
+Added the following to saves/common/config/lw_autosave_settings.json.data:
+ - "forceSaveAfterMapChange", forces a save after every hyperspace jump
+ - "saveAsCopy", if enabled, every autosave creates a new save
+Removed autosave_settings.json.default as it was confusing new players
+Updated config loading logic to autopopulate any missing entries
+Updated autosave to use API's cmdSave() instead of simulating keypresses
+
  1.1c (March 26, 2021)
 =======================
 Updated to be compatible with Starsector 0.95a
-Old, unused settings file will be removed if present
+Renamed generated settings file to saves/common/lw_autosave_settings.json.data
+(Old settings file will be removed if present)
 
  1.1b (August 28, 2020)
 ========================
