@@ -3,9 +3,9 @@
     "name": "Autosave",
     "author": "LazyWizard",
     "utility": "true",
-    "version": "1.2",
+    "version": "1.2b",
     "description": "Warns you when you haven't saved in a while. Can optionally force an autosave after battles and market transactions, or if enough time has passed since the last save. Configurable by editing saves/common/config/lw_autosave_settings.json.data. This config file will only exist after launching the game with this mod enabled at least once.",
-    "gameVersion": "0.95.1a-RC6",
+    "gameVersion": "0.96a-RC7",
     "dependencies": [
         {
             "id": "lw_lazylib",

@@ -188,7 +188,7 @@ class Autosaver extends BaseCampaignEventListener implements EveryFrameScript
         // Explicitly autosave if the player has been wandering aimlessly long enough
         runChecks();
 
-        // If we've hit an autosave trigger, force a save key event
+        // If we've hit an autosave trigger, force a save
         if (shouldAutosave)
         {
             shouldAutosave = false;
