@@ -1,4 +1,5 @@
 {
+    "changelogURL":"https://raw.githubusercontent.com/LazyWizard/autosave/master/mod/changelog.txt",
     "masterVersionFile":"https://raw.githubusercontent.com/LazyWizard/autosave/master/mod/autosave.version",
     "modName":"Autosave",
     "modThreadId":9748,
